@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Folder and File Manager</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #121212;
+            color: #e0e0e0;
+        }
+        .container {
+            padding: 20px;
+            max-width: 800px;
+            margin: auto;
+        }
+        #log {
+            border: 1px solid #333;
+            background: #1e1e1e;
+            padding: 10px;
+            height: 300px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px 2px rgba(0, 0, 0, 0.5);
+        }
+        #commandInput {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #333;
+            background-color: #1e1e1e;
+            color: #e0e0e0;
+            border-radius: 8px;
+            box-shadow: 0px 0px 5px 1px rgba(0, 0, 0, 0.5);
+        }
+        #commandInput:focus {
+            outline: none;
+            box-shadow: 0px 0px 8px 2px #00bcd4;
+        }
+        .log-entry {
+            opacity: 0;
+            animation: fadeIn 0.5s forwards;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+    </style>
+    <script>
+        class FileManager {
+            constructor() {
+                this.folders = [];
+            }
+
+            log(message) {
+                const logElement = document.getElementById("log");
+                const entry = document.createElement("div");
+                entry.innerHTML = message;
+                entry.className = "log-entry";
+                logElement.appendChild(entry);
+                logElement.scrollTop = logElement.scrollHeight;
+            }
+
+            printHelp() {
+                this.log("<strong>Available commands:</strong>");
+                this.log("- help: Display this help text");
+                this.log("- create folder: Create a new folder");
+                this.log("- list folders: List all folders");
+                this.log("- create file: Create a new file in a folder");
+                this.log("- list files: List files in a folder");
+                this.log("- delete folder: Delete a folder");
+                this.log("- delete file: Delete a file from a folder");
+                this.log("- search: Search for folders or files");
+                this.log("- view time: View the current system time");
+                this.log("- shutdown: Simulate shutting down the system");
+            }
+
+            createFolder(folderName) {
+                if (folderName) {
+                    if (this.folders.some(folder => folder.name === folderName)) {
+                        this.log(`Folder \"${folderName}\" already exists.`);
+                    } else {
+                        this.folders.push({ name: folderName, files: [] });
+                        this.log(`Folder \"${folderName}\" created successfully.`);
+                    }
+                } else {
+                    this.log("Folder creation failed: No name provided.");
+                }
+            }
+
+            listFolders() {
+                if (this.folders.length === 0) {
+                    this.log("No folders available.");
+                } else {
+                    this.log("<strong>Folders:</strong>");
+                    this.folders.forEach((folder, index) => {
+                        this.log(`${index}: ${folder.name}`);
+                    });
+                }
+            }
+
+            createFile(folderIndex, fileName) {
+                if (folderIndex >= 0 && folderIndex < this.folders.length) {
+                    if (fileName) {
+                        this.folders[folderIndex].files.push(fileName);
+                        this.log(`File \"${fileName}\" created in folder \"${this.folders[folderIndex].name}\".`);
+                    } else {
+                        this.log("File creation failed: No name provided.");
+                    }
+                } else {
+                    this.log("Invalid folder index.");
+                }
+            }
+
+            listFiles(folderIndex) {
+                if (folderIndex >= 0 && folderIndex < this.folders.length) {
+                    const folder = this.folders[folderIndex];
+                    if (folder.files.length === 0) {
+                        this.log(`No files in folder \"${folder.name}\".`);
+                    } else {
+                        this.log(`<strong>Files in folder \"${folder.name}\":</strong>`);
+                        folder.files.forEach(file => this.log(file));
+                    }
+                } else {
+                    this.log("Invalid folder index.");
+                }
+            }
+
+            deleteFolder(folderIndex) {
+                if (folderIndex >= 0 && folderIndex < this.folders.length) {
+                    const deletedFolder = this.folders.splice(folderIndex, 1);
+                    this.log(`Folder \"${deletedFolder[0].name}\" deleted successfully.`);
+                } else {
+                    this.log("Invalid folder index.");
+                }
+            }
+
+            deleteFile(folderIndex, fileName) {
+                if (folderIndex >= 0 && folderIndex < this.folders.length) {
+                    const folder = this.folders[folderIndex];
+                    const fileIndex = folder.files.indexOf(fileName);
+                    if (fileIndex >= 0) {
+                        folder.files.splice(fileIndex, 1);
+                        this.log(`File \"${fileName}\" deleted from folder \"${folder.name}\".`);
+                    } else {
+                        this.log(`File \"${fileName}\" not found in folder \"${folder.name}\".`);
+                    }
+                } else {
+                    this.log("Invalid folder index.");
+                }
+            }
+
+            search(query) {
+                if (!query) {
+                    this.log("Search failed: No query provided.");
+                    return;
+                }
+                let results = [];
+
+                // Search in folder names
+                this.folders.forEach((folder, index) => {
+                    if (folder.name.includes(query)) {
+                        results.push(`Folder: ${folder.name} (Index: ${index})`);
+                    }
+                    // Search in file names within folders
+                    folder.files.forEach(file => {
+                        if (file.includes(query)) {
+                            results.push(`File: ${file} (in Folder: ${folder.name})`);
+                        }
+                    });
+                });
+
+                if (results.length > 0) {
+                    this.log("<strong>Search Results:</strong>");
+                    results.forEach(result => this.log(result));
+                } else {
+                    this.log(`No results found for query: \"${query}\".`);
+                }
+            }
+
+            viewTime() {
+                const now = new Date();
+                this.log(`Current system time: ${now.toLocaleTimeString()}`);
+            }
+
+            shutdownSystem() {
+                this.log("System shutting down...");
+                document.getElementById("commandInput").disabled = true;
+            }
+
+            handleCommand(command) {
+                const [cmd, ...args] = command.split(" ");
+                switch (cmd) {
+                    case "help":
+                        this.printHelp();
+                        break;
+                    case "create_folder":
+                        this.createFolder(args.join(" "));
+                        break;
+                    case "list_folders":
+                        this.listFolders();
+                        break;
+                    case "create_file":
+                        this.listFolders();
+                        const folderIndex = parseInt(prompt("Enter folder index:"), 10);
+                        const fileName = prompt("Enter file name:");
+                        this.createFile(folderIndex, fileName);
+                        break;
+                    case "list_files":
+                        this.listFolders();
+                        const folderIdx = parseInt(prompt("Enter folder index:"), 10);
+                        this.listFiles(folderIdx);
+                        break;
+                    case "delete_folder":
+                        this.listFolders();
+                        const delFolderIdx = parseInt(prompt("Enter folder index to delete:"), 10);
+                        this.deleteFolder(delFolderIdx);
+                        break;
+                    case "delete_file":
+                        this.listFolders();
+                        const delFileFolderIdx = parseInt(prompt("Enter folder index:"), 10);
+                        const fileNameToDelete = prompt("Enter file name to delete:");
+                        this.deleteFile(delFileFolderIdx, fileNameToDelete);
+                        break;
+                    case "search":
+                        const query = prompt("Enter search query:");
+                        this.search(query);
+                        break;
+                    case "view_time":
+                        this.viewTime();
+                        break;
+                    case "shutdown":
+                        this.shutdownSystem();
+                        break;
+                    default:
+                        this.log("Unknown command. Type 'help' for available commands.");
+                }
+            }
+        }
+
+        const fileManager = new FileManager();
+
+        function onCommandInput(event) {
+            if (event.key === "Enter") {
+                const command = event.target.value.trim();
+                fileManager.log(`<em>User:</em> ${command}`);
+                fileManager.handleCommand(command);
+                event.target.value = "";
+            }
+        }
+
+        window.onload = () => {
+            fileManager.log("System initialized. Type 'help' for available commands.");
+        };
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Advanced Folder and File Manager</h1>
+        <div id="log"></div>
+        <input id="commandInput" type="text" onkeypress="onCommandInput(event)" placeholder="Enter command...">
+    </div>
+</body>
+</html>
